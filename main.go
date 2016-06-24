@@ -1,11 +1,14 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"strings"
 
 	gzb "github.com/ifo/gozulipbot"
 )
+
+var emoji Set
 
 func main() {
 	emailAddress, apiKey, err := gzb.GetConfigFromFlags()
@@ -25,6 +28,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// load emoji
+	emoji = getEmojiSet("emoji.txt")
+
 	q.EventsCallback(respondToMessage)
 
 	stop := make(chan struct{})
@@ -43,11 +49,33 @@ func respondToMessage(em gzb.EventMessage, err error) {
 
 	if len(parts) < 2 {
 		log.Println("invalid message")
-		em.Queue.Bot.Respond(em, `¯\_(ツ)_/¯`)
+		em.Queue.Bot.Respond(em, `ʕノ•ᴥ•ʔノ ︵ ┻━┻`)
 		return
 	}
 
-	emoji := parts[len(parts)-1]
+	emj := parts[len(parts)-1]
 
-	em.Queue.Bot.Respond(em, ":"+emoji+":\n:octopus:")
+	if emoji.Has(emj) {
+		em.Queue.Bot.Respond(em, ":"+emj+":\n:octopus:")
+	} else {
+		log.Println("invalid emoji " + emj)
+		em.Queue.Bot.Respond(em, `¯\_(ツ)_/¯`)
+	}
+}
+
+type Set map[string]struct{}
+
+func getEmojiSet(fileName string) Set {
+	ebts, _ := ioutil.ReadFile(fileName)
+	out := Set{}
+	for _, e := range strings.Fields(string(ebts)) {
+		out[e] = struct{}{}
+	}
+
+	return out
+}
+
+func (s *Set) Has(elem string) bool {
+	_, ok := (*s)[elem]
+	return ok
 }
