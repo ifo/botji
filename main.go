@@ -9,6 +9,7 @@ import (
 )
 
 var emoji Set
+var bases Set
 
 func main() {
 	emailAddress, apiKey, err := gzb.GetConfigFromFlags()
@@ -30,6 +31,7 @@ func main() {
 
 	// load emoji
 	emoji = getEmojiSet("emoji.txt")
+	bases = getEmojiSet("bases.txt")
 
 	q.EventsCallback(respondToMessage)
 
@@ -54,15 +56,13 @@ func respondToMessage(em gzb.EventMessage, err error) {
 	}
 
 	base := "octopus"
-	validBases := []string{"crab", "monkey"}
 	if len(parts) > 2 {
 		check := parts[len(parts)-2]
-		for _, b := range validBases {
-			if check == b {
-				base = b
-			}
+		if bases.Has(check) {
+			base = check
 		}
 	}
+
 	emj := parts[len(parts)-1]
 
 	if emoji.Has(emj) {
