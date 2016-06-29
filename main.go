@@ -53,10 +53,20 @@ func respondToMessage(em gzb.EventMessage, err error) {
 		return
 	}
 
+	base := "octopus"
+	validBases := []string{"crab", "monkey"}
+	if len(parts) > 2 {
+		check := parts[len(parts)-2]
+		for _, b := range validBases {
+			if check == b {
+				base = b
+			}
+		}
+	}
 	emj := parts[len(parts)-1]
 
 	if emoji.Has(emj) {
-		em.Queue.Bot.Respond(em, ":"+emj+":\n:octopus:")
+		em.Queue.Bot.Respond(em, ":"+emj+":\n:"+base+":")
 	} else {
 		log.Println("invalid emoji " + emj)
 		em.Queue.Bot.Respond(em, `¯\_(ツ)_/¯`)
