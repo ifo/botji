@@ -47,30 +47,42 @@ func respondToMessage(em gzb.EventMessage, err error) {
 
 	log.Println("message received: " + em.Content)
 
-	parts := strings.Fields(em.Content)
+	fields := strings.Fields(em.Content)
 
-	if len(parts) < 2 {
+	if len(fields) < 2 {
 		log.Println("invalid message")
 		em.Queue.Bot.Respond(em, `ʕノ•ᴥ•ʔノ ︵ ┻━┻`)
 		return
 	}
 
+	shrug := true
 	base := "octopus"
-	if len(parts) > 2 {
-		check := parts[len(parts)-2]
-		if bases.Has(check) {
-			base = check
+	top := ""
+
+	for _, w := range fields {
+		if bases.Has(w) {
+			base = w
+			shrug = false
+		} else if emoji.Has(w) {
+			top = w
+			shrug = false
 		}
 	}
 
-	emj := parts[len(parts)-1]
-
-	if emoji.Has(emj) {
-		em.Queue.Bot.Respond(em, ":"+emj+":\n:"+base+":")
-	} else {
-		log.Println("invalid emoji " + emj)
+	// no emoji found, shrug
+	if shrug {
+		log.Println("invalid emoji " + top)
 		em.Queue.Bot.Respond(em, `¯\_(ツ)_/¯`)
+		return
 	}
+
+	// no top, use whatever base was found as top
+	if top == "" {
+		top = base
+		base = "octopus"
+	}
+
+	em.Queue.Bot.Respond(em, ":"+top+":\n:"+base+":")
 }
 
 type Set map[string]struct{}
