@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	gzb "github.com/ifo/gozulipbot"
@@ -33,6 +34,15 @@ func main() {
 	emoji = getEmojiSet("emoji.txt")
 	bases = getEmojiSet("bases.txt")
 
+	// setup log file
+	f, err := os.OpenFile("botji.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+
 	q.EventsCallback(respondToMessage)
 
 	stop := make(chan struct{})
@@ -50,7 +60,6 @@ func respondToMessage(em gzb.EventMessage, err error) {
 	fields := strings.Fields(em.Content)
 
 	if len(fields) < 2 {
-		log.Println("invalid message")
 		em.Queue.Bot.Respond(em, `ʕノ•ᴥ•ʔノ ︵ ┻━┻`)
 		return
 	}
@@ -71,7 +80,6 @@ func respondToMessage(em gzb.EventMessage, err error) {
 
 	// no emoji found, shrug
 	if shrug {
-		log.Println("invalid emoji " + top)
 		em.Queue.Bot.Respond(em, `¯\_(ツ)_/¯`)
 		return
 	}
