@@ -21,3 +21,9 @@ func (s *Set) Has(elem string) bool {
 	_, ok := (*s)[elem]
 	return ok
 }
+
+func (s *Set) Union(s2 Set) {
+	for k := range s2 {
+		(*s)[k] = struct{}{}
+	}
+}
