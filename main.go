@@ -24,11 +24,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// load emoji
+	// Load emoji.
 	emoji = getEmojiSet("emoji.txt")
-	bases = getEmojiSet("bases.txt")
+	realm, err := bot.RealmEmojiSet()
+	if err != nil {
+		log.Fatal(err)
+	}
+	emoji.Union(realm)
 
-	// setup log file
+	// Setup log file.
 	f, err := os.OpenFile("botji.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		log.Fatal(err)
@@ -58,31 +62,23 @@ func respondToMessage(em gzb.EventMessage, err error) {
 		return
 	}
 
-	shrug := true
-	base := "octopus"
-	top := ""
-
+	unbelievable := true
+	emjs := []string{}
 	for _, w := range fields {
-		if bases.Has(w) {
-			base = w
-			shrug = false
-		} else if emoji.Has(w) {
-			top = w
-			shrug = false
+		if emoji.Has(w) {
+			emjs = append(emjs, w)
+			unbelievable = false
 		}
 	}
 
-	// no emoji found, shrug
-	if shrug {
-		em.Queue.Bot.Respond(em, `¯\_(ツ)_/¯`)
+	// No emoji found, this is unbelievable.
+	if unbelievable {
+		em.Queue.Bot.React(em, "astonished")
 		return
 	}
 
-	// no top, use whatever base was found as top
-	if top == "" {
-		top = base
-		base = "octopus"
+	// Send reactions!
+	for _, e := range emjs {
+		em.Queue.Bot.React(em, e)
 	}
-
-	em.Queue.Bot.Respond(em, ":"+top+":\n:"+base+":")
 }
