@@ -12,16 +12,11 @@ var emoji Set
 var bases Set
 
 func main() {
-	emailAddress, apiKey, err := gzb.GetConfigFromFlags()
+	bot := gzb.Bot{}
+	err := bot.GetConfigFromFlags()
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	bot := gzb.Bot{
-		Email:  emailAddress,
-		APIKey: apiKey,
-	}
-
 	bot.Init()
 
 	q, err := bot.RegisterAt()
