@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -9,7 +10,6 @@ import (
 )
 
 var emoji Set
-var bases Set
 
 func main() {
 	bot := gzb.Bot{}
@@ -38,16 +38,15 @@ func main() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-
 	log.SetOutput(f)
 
-	q.EventsCallback(respondToMessage)
+	q.EventsCallback(reactToMessage)
 
 	stop := make(chan struct{})
 	<-stop
 }
 
-func respondToMessage(em gzb.EventMessage, err error) {
+func reactToMessage(em gzb.EventMessage, err error) {
 	if err != nil {
 		log.Println(err)
 		return
@@ -71,7 +70,7 @@ func respondToMessage(em gzb.EventMessage, err error) {
 		}
 	}
 
-	// No emoji found, this is unbelievable.
+	// No emoji found; this is unbelievable.
 	if unbelievable {
 		em.Queue.Bot.React(em, "astonished")
 		return
@@ -80,5 +79,27 @@ func respondToMessage(em gzb.EventMessage, err error) {
 	// Send reactions!
 	for _, e := range emjs {
 		em.Queue.Bot.React(em, e)
+	}
+}
+
+type Set map[string]struct{}
+
+func getEmojiSet(fileName string) Set {
+	ebts, _ := ioutil.ReadFile(fileName)
+	out := Set{}
+	for _, e := range strings.Fields(string(ebts)) {
+		out[e] = struct{}{}
+	}
+	return out
+}
+
+func (s *Set) Has(elem string) bool {
+	_, ok := (*s)[elem]
+	return ok
+}
+
+func (s *Set) Union(s2 Set) {
+	for k := range s2 {
+		(*s)[k] = struct{}{}
 	}
 }
