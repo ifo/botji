@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	gzb "github.com/ifo/gozulipbot"
 )
@@ -39,6 +41,9 @@ func main() {
 	}
 	defer f.Close()
 	log.SetOutput(f)
+
+	// Stay subscribed to every stream.
+	go subscribeEveryDay(bot)
 
 	q.EventsCallback(reactToMessage)
 
@@ -101,5 +106,22 @@ func (s *Set) Has(elem string) bool {
 func (s *Set) Union(s2 Set) {
 	for k := range s2 {
 		(*s)[k] = struct{}{}
+	}
+}
+
+func subscribeEveryDay(bot gzb.Bot) {
+	for {
+		streams, err := bot.GetStreams()
+		if err != nil {
+			log.Println(err)
+		}
+		resp, err := bot.Subscribe(streams)
+		if err != nil {
+			log.Println(err)
+		}
+		if resp.StatusCode >= 400 {
+			log.Println(fmt.Errorf("Subscribe got error code %d", resp.StatusCode))
+		}
+		time.Sleep(24 * time.Hour)
 	}
 }
