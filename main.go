@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode"
 
 	gzb "github.com/ifo/gozulipbot"
 )
@@ -59,20 +60,10 @@ func reactToMessage(em gzb.EventMessage, err error) {
 
 	log.Println("message received: " + em.Content)
 
-	fields := strings.Fields(em.Content)
-
-	if len(fields) < 2 {
-		em.Queue.Bot.Respond(em, `ʕノ•ᴥ•ʔノ ︵ ┻━┻`)
-		return
-	}
-
+	emjs := parseEmoji(em.Content)
 	unbelievable := true
-	emjs := []string{}
-	for _, w := range fields {
-		if emoji.Has(w) {
-			emjs = append(emjs, w)
-			unbelievable = false
-		}
+	if len(emjs) > 0 {
+		unbelievable = false
 	}
 
 	// No emoji found; this is unbelievable.
@@ -82,9 +73,42 @@ func reactToMessage(em gzb.EventMessage, err error) {
 	}
 
 	// Send reactions!
-	for _, e := range emjs {
+	for e := range emjs {
 		em.Queue.Bot.React(em, e)
 	}
+}
+
+func parseEmoji(msg string) Set {
+	out := Set{}
+	clean := func(r rune) rune {
+		switch {
+		case r == ':' || r == '_' || r == '-':
+			return ' '
+		case unicode.IsPunct(r) || unicode.IsSymbol(r):
+			return -1
+		default:
+			return r
+		}
+	}
+	fields := strings.Fields(strings.ToLower(strings.Map(clean, msg)))
+
+	for i := range fields {
+		length := 8
+		if len(fields)-i < length {
+			length = len(fields) - i
+		}
+		for j := length + i; i < j; j-- {
+			emj := strings.Join(fields[i:j], "_")
+			if emoji.Has(emj) {
+				out[emj] = struct{}{}
+				// We've found an emoji, move the cursor to the end of this group.
+				i = j
+				break
+			}
+		}
+	}
+
+	return out
 }
 
 type Set map[string]struct{}
