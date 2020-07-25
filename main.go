@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
-	"time"
 	"unicode"
 
 	gzb "github.com/ifo/gozulipbot"
@@ -15,7 +14,10 @@ import (
 var emoji Set
 
 func main() {
+	logFile := flag.String("logfile", "", "log file location, defaults to standard out")
+
 	bot := gzb.Bot{}
+	// This calls flag.Parse()
 	err := bot.GetConfigFromFlags()
 	if err != nil {
 		log.Fatalln(err)
@@ -35,16 +37,15 @@ func main() {
 	}
 	emoji.Union(realm)
 
-	// Setup log file.
-	f, err := os.OpenFile("botji.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		log.Fatal(err)
+	if *logFile != "" {
+		// Setup log file.
+		f, err := os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		log.SetOutput(f)
 	}
-	defer f.Close()
-	log.SetOutput(f)
-
-	// Stay subscribed to every stream.
-	go subscribeEveryDay(bot)
 
 	q.EventsCallback(reactToMessage)
 
@@ -61,9 +62,9 @@ func reactToMessage(em gzb.EventMessage, err error) {
 	log.Println("message received: " + em.Content)
 
 	emjs := parseEmoji(em.Content)
-	unbelievable := true
-	if len(emjs) > 0 {
-		unbelievable = false
+	unbelievable := false
+	if len(emjs) == 0 {
+		unbelievable = true
 	}
 
 	// No emoji found; this is unbelievable.
@@ -130,22 +131,5 @@ func (s *Set) Has(elem string) bool {
 func (s *Set) Union(s2 Set) {
 	for k := range s2 {
 		(*s)[k] = struct{}{}
-	}
-}
-
-func subscribeEveryDay(bot gzb.Bot) {
-	for {
-		streams, err := bot.GetStreams()
-		if err != nil {
-			log.Println(err)
-		}
-		resp, err := bot.Subscribe(streams)
-		if err != nil {
-			log.Println(err)
-		}
-		if resp.StatusCode >= 400 {
-			log.Println(fmt.Errorf("Subscribe got error code %d", resp.StatusCode))
-		}
-		time.Sleep(24 * time.Hour)
 	}
 }
